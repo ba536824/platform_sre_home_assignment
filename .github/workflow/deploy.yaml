@@ -10,17 +10,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout Repository
       uses: actions/checkout@v2
 
-    - name: Set up Azure CLI
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Configure Azure CLI
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Set Kubeconfig
+    - name: Build and push Docker image
       run: |
-        az aks get-credentials --resource-group assignment --name assignmentCluster
+        docker build -t assignACR.azurecr.io/flask-app:$GITHUB_SHA .
+        docker login assignACR.azurecr.io -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
+        docker push assignACR.azurecr.io/flask-app:$GITHUB_SHA
 
     - name: Deploy to AKS
       run: |
